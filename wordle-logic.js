@@ -1,4 +1,4 @@
-const goalWord = "laura"
+let goalWord = "";
 let gameOver = false;
 let currentRow = 0;
 
@@ -7,7 +7,9 @@ const colors = {
     yellow: "#ffd06b",
     red: "#ff6b6b"
 }
-function init(){
+async function init(){
+
+    await getWordFromAPI();
     obtainInputWord();
 }
 function obtainInputWord(){
@@ -20,13 +22,37 @@ function obtainInputWord(){
             const rowIndex = Math.floor(index / cols); // Determine row
             if (input.value && index % cols === cols - 1) { // When the row has been completed
                 let currentWord = getWordForRow(rowIndex); // Store the word
-                let colorList = compareWords(goalWord, currentWord);
-                assignColorsToCells(colorList, rowIndex);
-                checkGameStatus(colorList);
-                if(!gameOver)currentRow++; 
+
+                validateWord(currentWord).then(isValid => {
+                    if (isValid) {
+                        console.log("The word is valid!");
+                        let colorList = compareWords(goalWord, currentWord);
+                        assignColorsToCells(colorList, rowIndex);
+                        disableRow(rowIndex);
+                        checkGameStatus(colorList);
+                        if(!gameOver)currentRow++; 
+                    } else {
+                        console.log("The word is not valid!");
+                        clearRow(rowIndex);
+                    }
+                });
             }
         });
     });
+}
+async function getWordFromAPI(){
+    const WORD_URL = "https://words.dev-apis.com/word-of-the-day";
+    try {
+        const response = await fetch(WORD_URL);
+        const processedResponse = await response.json();
+        goalWord = processedResponse.word;
+    } catch (error) {
+        console.error("Error fetching the word:", error);
+    }
+}
+function getIndexFromRowCol(row, col) {
+    // Obtain index of the grid given the row and the column
+    return row * window.wordleConfig.cols + col;
 }
 function getWordForRow(rowIndex) {
     let word = '';
@@ -35,20 +61,48 @@ function getWordForRow(rowIndex) {
         const index = getIndexFromRowCol(rowIndex, col);
         word += inputs[index].value.toLowerCase();
     }
-    console.log(`Row ${rowIndex + 1} word: ${word}`);
     return word;
 }
-function getIndexFromRowCol(row, col) {
-    // Obtain index of the grid given the row and the column
-    return row * window.wordleConfig.cols + col;
+async function validateWord(word){
+    const VALIDATE_URL = "https://words.dev-apis.com/validate-word";
+
+    const response = await fetch(VALIDATE_URL, {
+        method: "POST",
+        body: JSON.stringify({ word }),
+    });
+
+    const result = await response.json(); // Processar la resposta en format JSON
+    console.log(`Validation result for "${word}":`, result);
+    return result.validWord;
 }
-function compareWords(goalWord, inputWord){
-    console.log("Comparing words: "+ goalWord+", "+inputWord);
+function clearRow(rowIndex) {
+    // Clear all inputs in the row
+    for (let col = 0; col < window.wordleConfig.cols; col++) {
+        const index = getIndexFromRowCol(rowIndex, col);
+        inputs[index].value = '';
+        inputs[index].style.border = '3px solid ' + colors.red; // Set the border to red
+
+    }
+
+    // Add a small delay to reset the borders back to white after a few seconds
+    setTimeout(() => {
+        for (let col = 0; col < window.wordleConfig.cols; col++) {
+            const index = getIndexFromRowCol(rowIndex, col);
+            inputs[index].style.border = '3px solid white';  // Reset the border to white
+        }
+    }, 1000); // Delay for 1 second
     
+    // Focus the first input in the row
+    const firstInputInRow = inputs[getIndexFromRowCol(rowIndex, 0)];
+    firstInputInRow.focus();
+
+
+}
+function compareWords(goalWord, inputWord){    
     let goalWordArray = goalWord.split("");
     let inputWordArray = inputWord.split("");
 
-    const result = []; // Array to store the colors for the word
+    const result = [];
 
     // First pass: Check for exact matches (green)
     // First, mark green (exact matches)
@@ -71,13 +125,9 @@ function compareWords(goalWord, inputWord){
             }
         }
     });
-
-    console.log(`Result colors: ${result.join(", ")}`);
-    return result; // Returns the array of colors
+    return result;
 }
 function assignColorsToCells(colorList, row){
-    console.log("Assigning colors...");
-
     for (let col = 0; col < window.wordleConfig.cols; col++) {
         const index = getIndexFromRowCol(row, col); // Get the index for the current row and column
         const input = inputs[index]; // Get the input at the current index
@@ -98,6 +148,12 @@ function assignColorsToCells(colorList, row){
         }
     }
 }
+function disableRow(rowIndex) {
+    for (let col = 0; col < window.wordleConfig.cols; col++) {
+        const index = getIndexFromRowCol(rowIndex, col);
+        inputs[index].disabled = true;
+    }
+}
 function checkGameStatus(colorList) {
     if (colorList.every(color => color === 'green')) {
         finishGame("won");
@@ -113,7 +169,6 @@ function finishGame(result){
     else if(result === "lost") youLost();
 }
 function youWon(){
-    console.log("Congratulations, you won!");
     document.querySelector('h1').style.color = colors.green;
     const gameResult = document.querySelector('.game-result');
     gameResult.style.color = colors.green;

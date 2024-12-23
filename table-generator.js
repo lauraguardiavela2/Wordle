@@ -17,8 +17,12 @@ for (let i = 0; i < window.wordleConfig.rows * window.wordleConfig.cols; i++) {
     // Add an event listener for when the user types a letter into the input skip to the next cell
     input.addEventListener('input', (e) => {
         const index = inputs.indexOf(e.target);
-        if (e.target.value && index < inputs.length - 1) {
-            inputs[index + 1].focus();
+        
+        // Allow only alphabetic characters (A-Z, a-z)
+        if (!/^[a-zA-Z]$/.test(e.target.value)) {
+            e.target.value = '';  // Clear the input if it's not a letter
+        } else if (e.target.value && index < inputs.length - 1) {
+            inputs[index + 1].focus();  // Move to the next input
         }
     });
 
