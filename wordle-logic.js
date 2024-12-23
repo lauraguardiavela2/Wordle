@@ -1,11 +1,13 @@
 let goalWord = "";
 let gameOver = false;
 let currentRow = 0;
+let isValidating = false;
 
 const colors = {
-    green: "#99db7d",
-    yellow: "#ffd06b",
-    red: "#ff6b6b"
+    green: "#add69c",
+    yellow: "#faecaf",
+    red: "#ffc8c8",
+    white: "#ffffff"
 }
 async function init(){
 
@@ -23,6 +25,9 @@ function obtainInputWord(){
             if (input.value && index % cols === cols - 1) { // When the row has been completed
                 let currentWord = getWordForRow(rowIndex); // Store the word
 
+                isValidating = true;
+                disableInputs();
+
                 validateWord(currentWord).then(isValid => {
                     if (isValid) {
                         console.log("The word is valid!");
@@ -35,7 +40,10 @@ function obtainInputWord(){
                         console.log("The word is not valid!");
                         clearRow(rowIndex);
                     }
+                    isValidating = false;
+                    enableInputs();
                 });
+
             }
         });
     });
@@ -76,27 +84,29 @@ async function validateWord(word){
     return result.validWord;
 }
 function clearRow(rowIndex) {
+    
+    // Add a warning in the screen
+    document.querySelector(".warning-box").textContent = "This word doesn't exist!";
+
     // Clear all inputs in the row
     for (let col = 0; col < window.wordleConfig.cols; col++) {
         const index = getIndexFromRowCol(rowIndex, col);
         inputs[index].value = '';
-        inputs[index].style.border = '3px solid ' + colors.red; // Set the border to red
-
+        inputs[index].style.backgroundColor = colors.red; // Set the border to red
     }
 
     // Add a small delay to reset the borders back to white after a few seconds
     setTimeout(() => {
         for (let col = 0; col < window.wordleConfig.cols; col++) {
             const index = getIndexFromRowCol(rowIndex, col);
-            inputs[index].style.border = '3px solid white';  // Reset the border to white
+            inputs[index].style.backgroundColor = colors.white;  // Reset the border to white
+            document.querySelector(".warning-box").textContent = "";
         }
     }, 1000); // Delay for 1 second
     
     // Focus the first input in the row
     const firstInputInRow = inputs[getIndexFromRowCol(rowIndex, 0)];
     firstInputInRow.focus();
-
-
 }
 function compareWords(goalWord, inputWord){    
     let goalWordArray = goalWord.split("");
@@ -134,16 +144,16 @@ function assignColorsToCells(colorList, row){
 
         switch (colorList[col]) {
             case 'green':
-                input.style.border = '3px solid'+colors.green;  
+                input.style.backgroundColor = colors.green;
                 break;
             case 'yellow':
-                input.style.border = '3px solid'+colors.yellow;
+                input.style.backgroundColor = colors.yellow;
                 break;
             case 'red':
-                input.style.border = '3px solid'+colors.red;
+                input.style.backgroundColor = colors.red;
                 break;
             default:
-                input.style.border = '3px solid white';
+                input.style.backgroundColor = colors.white;
                 break;
         }
     }
@@ -169,18 +179,20 @@ function finishGame(result){
     else if(result === "lost") youLost();
 }
 function youWon(){
-    document.querySelector('h1').style.color = colors.green;
+    document.querySelector('h1').style.backgroundColor = colors.green;
     const gameResult = document.querySelector('.game-result');
-    gameResult.style.color = colors.green;
+    gameResult.style.backgroundColor = colors.green;
+    gameResult.style.borderRadius = "20px";
     gameResult.textContent = "YOU WON!";
 
     const goalWordShow = document.querySelector('.game-goal-word');
     goalWordShow.textContent = "YOU GUESSED THE WORD!";
 }
 function youLost(){
-    document.querySelector('h1').style.color = colors.red;
+    document.querySelector('h1').style.backgroundColor = colors.red;
     const gameResult = document.querySelector('.game-result');
-    gameResult.style.color = colors.red;
+    gameResult.style.backgroundColor = colors.red;
+    gameResult.style.borderRadius = "20px";
     gameResult.textContent = "YOU LOST!";
 
     const goalWordShow = document.querySelector('.game-goal-word');
@@ -191,6 +203,18 @@ function disableInputs() {
     inputs.forEach(input => {
         input.disabled = true; // Disable input
     });
+}
+function enableInputs() {
+    // Enable all inputs except those in permanently disabled rows
+    inputs.forEach(input => {
+        if (!input.classList.contains('disabled')) {
+            input.disabled = false;
+        }
+    });
+
+    // Focus the first input in the current row
+    const firstInputInRow = inputs[getIndexFromRowCol(currentRow, 0)];
+    firstInputInRow.focus();
 }
 init();
 

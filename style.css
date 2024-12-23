@@ -1,7 +1,7 @@
 body {
     font-family: 'Roboto', sans-serif;
     font-weight: lighter;
-    background-color: #4a4a4a;
+    background-color: #96cad1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -20,16 +20,29 @@ body {
     width: 60px;
     height: 60px;
     text-align: center;
-    border: 3px solid white;
+    border: none;
     border-radius: 10px;
-    background-color: #4a4a4a;
+    background-color: #ffffff;
     font-size: 24px;
     font-weight: bold;
     text-transform: uppercase;
-    color: white;
+    color: rgb(0, 0, 0);
+    
 }
 h1{
+    display: flex;
     font-weight: lighter;
+    width: 300px;
+    height: 65px;
+    border: none;
+    border-radius: 10px;
+    background-color: #ffffff;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: black;
+    font-size: 35px;
+    margin-top: 60px;
 }
 .game-result{
     text-align: center;
@@ -42,4 +55,10 @@ h1{
     text-align: center;
     padding: 20px;
     box-sizing: border-box;
+}
+.warning-box{
+    display: flex;
+    margin-top: 40px;
+    justify-content: center;
+    font-size: 35px;
 }
